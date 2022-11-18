@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import numpy as np
 import euchar.utils
 from euchar.curve import image_2D, image_3D, filtration
