@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-
 import numpy as np
 import euchar.utils
 from euchar.curve import image_2D, image_3D, filtration
@@ -12,10 +11,14 @@ from seaborn import distplot,displot,histplot
 import open3d as o3d
 
 def visualize(obj):
+    '''visualize open3d object'''
+
     print(type(obj))
     o3d.visualization.draw_geometries([obj])
 
 def voxelization(filename):
+    '''converts a pcd file and returns PCD and VoxelGrid object'''
+
     N = 2000
 
     pcd = o3d.io.read_point_cloud(filename)
@@ -35,6 +38,8 @@ def voxelization(filename):
     return pcd,voxel_grid
 
 def voxels_to_img3d(voxel):
+    '''return 3d array of pixel values from voxel object'''
+
     voxels = voxel.get_voxels()
     indices = np.stack(list(vx.grid_index for vx in voxels))
     colors = np.stack(list(vx.color for vx in voxels))
@@ -53,7 +58,9 @@ def voxels_to_img3d(voxel):
 
     return img3d
 
-def euler_char_curves(points, img3d, testcase):
+def euler_char_curves(points, img3d):
+    '''extract ecc from set of points and array of pixel values of 3d image'''
+
     #vector_3D_changes = euchar.utils.vector_all_euler_changes_in_3D_images()
     #np.save("vector_3D_changes.npy", vector_3D_changes)
     #vector_3D_changes = np.load("vector_3D_changes.npy")
@@ -68,28 +75,30 @@ def euler_char_curves(points, img3d, testcase):
     simplices_3D, alpha_3D = alpha_filtration_3D(points)
     
     histplot(alpha_3D, ax=ax[0])
-    ax[0].set(title="Distribution 3D miniball radiuses - "+testcase)
+    ax[0].set(title="Distribution 3D miniball radiuses")
 
     bins_3D = np.linspace(0.0, 1, num=200)
     filt_3D = filtration(simplices_3D, alpha_3D, bins_3D)
     
     ax[1].plot(bins_3D, filt_3D, color="royalblue")
-    ax[1].set(title="Euler char curve - 3D points - "+testcase, xlim=[-0.02, 1.02], ylim=[-50, 150]);
+    ax[1].set(title="Euler char curve - 3D points", xlim=[-0.02, 1.02], ylim=[-50, 150]);
     
     plt.show()
 
-def run(testcase, index):
-    pcd,voxel = voxelization(testcase)
+def run(file):
+    '''visualize 3d image file as pcd and voxels, extract and display ecc plots'''
+
+    pcd,voxel = voxelization(file)
     visualize(pcd)
     visualize(voxel)
     img3d = voxels_to_img3d(voxel)
     points = np.asarray(pcd.points)
-    euler_char_curves(points, img3d, str(index+1))
+    euler_char_curves(points, img3d)
 
 def main():
     testcases = ["test_no_soil_full_plant1.ply", "test_no_soil_full_plant2.ply"]
 
-    run(testcases[1], 1)
+    run(testcases[1])
     
     return
 
