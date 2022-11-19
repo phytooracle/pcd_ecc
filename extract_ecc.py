@@ -1,25 +1,23 @@
 #!/usr/bin/python3
+import sys
+import os
+import argparse as arg
 import numpy as np
 import euchar.utils
 from euchar.curve import image_2D, image_3D, filtration
 from euchar.filtrations import alpha_filtration_2D, alpha_filtration_3D, inverse_density_filtration
 from euchar.display import piecewise_constant_curve
 import matplotlib.pyplot as plt
-plt.style.use("seaborn-whitegrid")
-plt.rcParams.update({"font.size": 16})
 from seaborn import distplot,displot,histplot
 import open3d as o3d
 
 def visualize(obj):
     '''visualize open3d object'''
 
-    print(type(obj))
     o3d.visualization.draw_geometries([obj])
 
-def voxelization(filename):
+def voxelization(filename, voxel_size):
     '''converts a pcd file and returns PCD and VoxelGrid object'''
-
-    N = 2000
 
     pcd = o3d.io.read_point_cloud(filename)
     
@@ -30,10 +28,11 @@ def voxelization(filename):
     # create new point cloud object
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(points)
+    N = len(pcd.points)
 
     # voxelization
     pcd.colors = o3d.utility.Vector3dVector(np.random.uniform(0, 1, size=(N, 3)))
-    voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd, voxel_size=0.001)
+    voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd, voxel_size=voxel_size)
 
     return pcd,voxel_grid
 
@@ -51,7 +50,7 @@ def voxels_to_img3d(voxel):
     
     max_ += 1
 
-    img3d = np.full((max_, max_, max_), 255)
+    img3d = np.ones((max_, max_, max_))
     for i in range(len(indices)):
         x, y, z = indices[i]
         img3d[x,y,z] = 0
@@ -85,21 +84,44 @@ def euler_char_curves(points, img3d):
     
     plt.show()
 
-def run(file):
+def run(file, p, v, voxel_size):
     '''visualize 3d image file as pcd and voxels, extract and display ecc plots'''
 
-    pcd,voxel = voxelization(file)
-    visualize(pcd)
-    visualize(voxel)
+    pcd,voxel = voxelization(file, voxel_size)
+    if p:
+        visualize(pcd)
+    if v:
+        visualize(voxel)
     img3d = voxels_to_img3d(voxel)
     points = np.asarray(pcd.points)
     euler_char_curves(points, img3d)
 
-def main():
-    testcases = ["test_no_soil_full_plant1.ply", "test_no_soil_full_plant2.ply"]
+def error_handling_args(args):
+    try:
+        file = open(args.filename)
+        file.close()
+    except IOError:
+        print("Could not open/read file:", args.filename)
+        sys.exit()
 
-    run(testcases[1])
-    
+def main():
+    def_vs = 0.001
+    parser = arg.ArgumentParser()
+
+    # arguments/flags to run
+    parser.add_argument("filename", help="Input PCD file")
+    parser.add_argument("-p", "--pcd", action="store_true", help="Visualize as PCD image")
+    parser.add_argument("-v", "--voxel", action="store_true", help="Visualize as Voxel image")
+    parser.add_argument("-vs", "--voxel-size", help=f"Set voxel size (default {def_vs:g})", default=def_vs, type=float)
+
+    args = parser.parse_args()
+
+    # error handling on argument values
+    error_handling_args(args)
+
+    # run with arguments/flags
+    run(args.filename, args.pcd, args.voxel, args.voxel_size)
+
     return
 
 if __name__=='__main__':
