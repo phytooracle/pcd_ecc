@@ -34,7 +34,10 @@ RUN apt-get install -y wget \
                        libsm6 \
                        libxext6 \
                        libxrender-dev \
-                       libgl1-mesa-dev
+                       libgl1-mesa-dev \
+                       libprotobuf-dev \
+                       protobuf-compiler \
+                       cmake
 
 # Download and extract Python sources
 RUN cd /opt \
