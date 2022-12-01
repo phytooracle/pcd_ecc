@@ -26,5 +26,5 @@ tensorflow==2.6.0
 keras==2.6.0
 seaborn==0.12.1
 cmake==3.25.0
-pybind11==2.10.1
-euchar==0.1.6
+pybind11
+euchar
