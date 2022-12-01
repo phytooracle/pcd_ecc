@@ -59,7 +59,7 @@ RUN pip3 install cython
 RUN pip3 install --upgrade cython
 RUN pip3 install setuptools==57.5.0
 RUN pip3 install GDAL==3.0.4
-RUN pip3 install -r /opt/requirements.txt --use-pep517
+RUN pip3 install -r /opt/requirements.txt
 
 RUN wget http://download.osgeo.org/libspatialindex/spatialindex-src-1.7.1.tar.gz
 RUN tar -xvf spatialindex-src-1.7.1.tar.gz
