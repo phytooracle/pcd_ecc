@@ -10,6 +10,7 @@ from euchar.display import piecewise_constant_curve
 import matplotlib.pyplot as plt
 from seaborn import distplot,displot,histplot
 import open3d as o3d
+import pandas as pd
 
 def visualize(obj):
     '''visualize open3d object'''
@@ -78,12 +79,21 @@ def euler_char_curves(points, img3d, save, output, plant_name, visualize_ecc):
     ax[1].plot(bins_3D, filt_3D, color="royalblue")
     ax[1].set(title="Euler char curve - 3D points", xlim=[-0.02, 1.02], ylim=[-50, 150]);
 
-    plt.savefig(os.path.join(outpath, '_'.join(["figures", plant_name, "ecc_figure.png"])), dpi=900, bbox_inches='tight', facecolor='white', edgecolor='white')
+    plt.savefig(os.path.join(outpath, '_'.join([plant_name, "ecc_figure.png"])), dpi=900, bbox_inches='tight', facecolor='white', edgecolor='white')
 
     if visualize_ecc:
         plt.show()
         
     if save:
+        outpath = os.path.join(os.getcwd(), output, "dataframes", plant_name)
+
+        if not os.path.isdir(outpath):
+            os.makedirs(outpath)
+        
+        df = pd.DataFrame({'bin': bins_3D, 'filter': filt_3D})
+        
+        df.to_csv(os.path.join(outpath, '_'.join([plant_name, "ecc.csv"])))
+
         save_array(array=simplices_3D, output=output, plant_name=plant_name, tag="simp_3D")
         save_array(array=alpha_3D, output=output, plant_name=plant_name, tag="alpha_3D")
         save_array(array=bins_3D, output=output, plant_name=plant_name, tag="bins_3D")
@@ -96,7 +106,7 @@ def save_array(array, output, plant_name, tag):
     if not os.path.isdir(outpath):
         os.makedirs(outpath)
 
-    np.save(os.path.join(outpath, '_'.join(["arrays", plant_name, tag])), array)
+    np.save(os.path.join(outpath, '_'.join([plant_name, tag])), array)
 
 def run(file, p, v, voxel_size, save, output, plant_name, visualize_ecc):
     '''visualize 3d image file as pcd and voxels, extract and display ecc plots'''
