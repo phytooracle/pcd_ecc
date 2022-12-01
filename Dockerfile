@@ -1,11 +1,11 @@
-FROM ubuntu:18.04
+FROM ubuntu:22.04
 
 WORKDIR /opt
 COPY . /opt
 
 USER root
 ARG DEBIAN_FRONTEND=noninteractive
-ARG PYTHON_VERSION=3.7.1
+ARG PYTHON_VERSION=3.10.6
 RUN apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false update -y
 
 RUN apt-get update 
@@ -23,7 +23,7 @@ RUN apt-get install -y wget \
                        libffi-dev \
                        libbz2-dev \
                        zlib1g-dev \
-                       libreadline-gplv2-dev \
+                       #libreadline-gplv2-dev \
                        libncursesw5-dev \
                        libssl-dev \
                        libsqlite3-dev \
@@ -50,26 +50,11 @@ RUN cd /opt/Python-${PYTHON_VERSION} \
     && make install \
     && rm /opt/Python-${PYTHON_VERSION}.tgz /opt/Python-${PYTHON_VERSION} -rf
 
-# Install GDAL
-RUN add-apt-repository ppa:ubuntugis/ubuntugis-unstable
-RUN apt-get update
-RUN apt-get install -y libgdal-dev
+# Install packages
 RUN pip3 install --upgrade pip
-RUN pip3 install cython
-RUN pip3 install --upgrade cython
-RUN pip3 install setuptools==57.5.0
-RUN pip3 install GDAL==3.0.4
+RUN pip3 install "pybind11[global]"
 RUN pip3 install -r /opt/requirements.txt
-
-RUN wget http://download.osgeo.org/libspatialindex/spatialindex-src-1.7.1.tar.gz
-RUN tar -xvf spatialindex-src-1.7.1.tar.gz
-RUN cd spatialindex-src-1.7.1/ && ./configure && make && make install
-RUN ldconfig                       
-RUN add-apt-repository ppa:ubuntugis/ppa
-RUN export CPLUS_INCLUDE_PATH=/usr/include/gdal
-RUN export C_INCLUDE_PATH=/usr/include/gdal
-
 RUN apt-get install -y locales && locale-gen en_US.UTF-8
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
 
-ENTRYPOINT [ "/usr/local/bin/python3.7", "/opt/extract_ecc.py" ]
+ENTRYPOINT [ "/usr/local/bin/python3.10", "/opt/extract_ecc.py" ]
