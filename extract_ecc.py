@@ -91,8 +91,13 @@ def euler_char_curves(points, img3d, save, output, plant_name, visualize_ecc):
             os.makedirs(outpath)
         
         df = pd.DataFrame({'bin': bins_3D, 'filter': filt_3D})
-        
-        df.to_csv(os.path.join(outpath, '_'.join([plant_name, "ecc.csv"])))
+        df['plant_name'] = plant_name
+        df = df.set_index('plant_name')
+        df.to_csv(os.path.join(outpath, '_'.join([plant_name, "ecc_long.csv"])), index=True)
+
+        df = df.pivot(columns='bin')
+        df.columns = df.columns.droplevel(0)
+        df.to_csv(os.path.join(outpath, '_'.join([plant_name, "ecc_wide.csv"])), index=True)
 
         save_array(array=simplices_3D, output=output, plant_name=plant_name, tag="simp_3D")
         save_array(array=alpha_3D, output=output, plant_name=plant_name, tag="alpha_3D")
