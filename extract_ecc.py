@@ -57,34 +57,48 @@ def voxels_to_img3d(voxel):
 
     return img3d
 
-def euler_char_curves(points, img3d):
+def euler_char_curves(points, img3d, save, output, plant_name, visualize_ecc):
     '''extract ecc from set of points and array of pixel values of 3d image'''
 
-    #vector_3D_changes = euchar.utils.vector_all_euler_changes_in_3D_images()
-    #np.save("vector_3D_changes.npy", vector_3D_changes)
-    #vector_3D_changes = np.load("vector_3D_changes.npy")
-    #ecc_3D = image_3D(img3d, vector_3D_changes)
+    outpath = os.path.join(os.getcwd(), output, "figures", plant_name)
 
-    #plt.plot(np.arange(256), ecc_3D, color="blue")
-    #plt.show()
+    if not os.path.isdir(outpath):
+        os.makedirs(outpath)
+
+    simplices_3D, alpha_3D = alpha_filtration_3D(points)
+    bins_3D = np.linspace(0.0, 1, num=200)
+    filt_3D = filtration(simplices_3D, alpha_3D, bins_3D)
 
     fig, ax = plt.subplots(1, 2, figsize=(14,4))
     plt.subplots_adjust(wspace=0.3)
 
-    simplices_3D, alpha_3D = alpha_filtration_3D(points)
-    
     histplot(alpha_3D, ax=ax[0])
     ax[0].set(title="Distribution 3D miniball radiuses")
 
-    bins_3D = np.linspace(0.0, 1, num=200)
-    filt_3D = filtration(simplices_3D, alpha_3D, bins_3D)
-    
     ax[1].plot(bins_3D, filt_3D, color="royalblue")
     ax[1].set(title="Euler char curve - 3D points", xlim=[-0.02, 1.02], ylim=[-50, 150]);
-    
-    plt.show()
 
-def run(file, p, v, voxel_size):
+    plt.savefig(os.path.join(outpath, '_'.join(["figures", plant_name, "ecc_figure.png"])), dpi=900, bbox_inches='tight', facecolor='white', edgecolor='white')
+
+    if visualize_ecc:
+        plt.show()
+        
+    if save:
+        save_array(array=simplices_3D, output=output, plant_name=plant_name, tag="simp_3D")
+        save_array(array=alpha_3D, output=output, plant_name=plant_name, tag="alpha_3D")
+        save_array(array=bins_3D, output=output, plant_name=plant_name, tag="bins_3D")
+        save_array(array=filt_3D, output=output, plant_name=plant_name, tag="filt_3D")
+
+def save_array(array, output, plant_name, tag):
+
+    outpath = os.path.join(os.getcwd(), output, "arrays", plant_name)
+
+    if not os.path.isdir(outpath):
+        os.makedirs(outpath)
+
+    np.save(os.path.join(outpath, '_'.join(["arrays", plant_name, tag])), array)
+
+def run(file, p, v, voxel_size, save, output, plant_name, visualize_ecc):
     '''visualize 3d image file as pcd and voxels, extract and display ecc plots'''
 
     pcd,voxel = voxelization(file, voxel_size)
@@ -94,7 +108,7 @@ def run(file, p, v, voxel_size):
         visualize(voxel)
     img3d = voxels_to_img3d(voxel)
     points = np.asarray(pcd.points)
-    euler_char_curves(points, img3d)
+    euler_char_curves(points=points, img3d=img3d, save=save, output=output, plant_name=plant_name, visualize_ecc=visualize_ecc)
 
 def error_handling_args(args):
     try:
@@ -110,9 +124,13 @@ def main():
 
     # arguments/flags to run
     parser.add_argument("filename", help="Input PCD file")
-    parser.add_argument("-p", "--pcd", action="store_true", help="Visualize as PCD image")
-    parser.add_argument("-v", "--voxel", action="store_true", help="Visualize as Voxel image")
+    parser.add_argument("-p", "--pcd", action="store_true", help="Visualize as PCD image. Default: False")
+    parser.add_argument("-v", "--voxel", action="store_true", help="Visualize as Voxel image. Default: False")
+    parser.add_argument("-vis", "--visualize_ecc", action="store_true", help="Visualize ECC curve. Default: False")
+    parser.add_argument("-s", "--save", action="store_false", help="Store numpy of ECC data. Default: True")
     parser.add_argument("-vs", "--voxel-size", help=f"Set voxel size (default {def_vs:g})", default=def_vs, type=float)
+    parser.add_argument("-n", "--name", required=True, help="The name of the input plant.")
+    parser.add_argument("-o", "--output", default="euler_characteristic_curves", help="The name of the output directory.")
 
     args = parser.parse_args()
 
@@ -120,7 +138,7 @@ def main():
     error_handling_args(args)
 
     # run with arguments/flags
-    run(args.filename, args.pcd, args.voxel, args.voxel_size)
+    run(file=args.filename, p=args.pcd, v=args.voxel, voxel_size=args.voxel_size, save=args.save, output=args.output, plant_name=args.name, visualize_ecc=args.visualize_ecc)
 
     return
 
