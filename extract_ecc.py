@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 from seaborn import distplot,displot,histplot
 import open3d as o3d
 import pandas as pd
+import demeter.directions as dirs
+from sklearn import preprocessing
 
 def visualize(obj):
     '''visualize open3d object'''
@@ -58,7 +60,19 @@ def voxels_to_img3d(voxel):
 
     return img3d
 
-def euler_char_curves(points, img3d, save, output, plant_name, visualize_ecc):
+
+def get_direction(parallels, meridians):
+    
+    #pdirections = dirs.pole_directions(parallels,meridians,x=1,y=0,z=2)
+
+    #rdirections = dirs.random_directions(len(pdirections))
+    #udirections = dirs.regular_directions(len(pdirections))
+    directions = dirs.regular_directions(128)
+
+    return directions #rdirections, udirections
+
+
+def euler_char_curves(points, img3d, save, output, plant_name, visualize_ecc, parallels, meridians):
     '''extract ecc from set of points and array of pixel values of 3d image'''
 
     outpath = os.path.join(os.getcwd(), output, "figures", plant_name)
@@ -67,7 +81,13 @@ def euler_char_curves(points, img3d, save, output, plant_name, visualize_ecc):
         os.makedirs(outpath)
 
     simplices_3D, alpha_3D = alpha_filtration_3D(points)
+
+    # Get directions
     bins_3D = np.linspace(0.0, 1, num=200)
+    #bins_3D = get_direction(parallels=parallels, meridians=meridians)
+    #rdirections, udirections = get_direction(parallels=parallels, meridians=meridians)
+    #bins_3D = udirections
+    
     filt_3D = filtration(simplices_3D, alpha_3D, bins_3D)
 
     fig, ax = plt.subplots(1, 2, figsize=(14,4))
@@ -99,10 +119,10 @@ def euler_char_curves(points, img3d, save, output, plant_name, visualize_ecc):
         df.columns = df.columns.droplevel(0)
         df.to_csv(os.path.join(outpath, '_'.join([plant_name, "ecc_wide.csv"])), index=True)
 
-        save_array(array=simplices_3D, output=output, plant_name=plant_name, tag="simp_3D")
-        save_array(array=alpha_3D, output=output, plant_name=plant_name, tag="alpha_3D")
-        save_array(array=bins_3D, output=output, plant_name=plant_name, tag="bins_3D")
-        save_array(array=filt_3D, output=output, plant_name=plant_name, tag="filt_3D")
+        #save_array(array=simplices_3D, output=output, plant_name=plant_name, tag="simp_3D")
+        #save_array(array=alpha_3D, output=output, plant_name=plant_name, tag="alpha_3D")
+        #save_array(array=bins_3D, output=output, plant_name=plant_name, tag="bins_3D")
+        #save_array(array=filt_3D, output=output, plant_name=plant_name, tag="filt_3D")
 
 def save_array(array, output, plant_name, tag):
 
@@ -113,7 +133,14 @@ def save_array(array, output, plant_name, tag):
 
     np.save(os.path.join(outpath, '_'.join([plant_name, tag])), array)
 
-def run(file, p, v, voxel_size, save, output, plant_name, visualize_ecc):
+def normalize_pc(points):
+
+    min_max_scaler = preprocessing.MinMaxScaler()
+    minmax = min_max_scaler.fit_transform(points)
+
+    return minmax
+
+def run(file, p, v, voxel_size, save, output, plant_name, visualize_ecc, parallels, meridians):
     '''visualize 3d image file as pcd and voxels, extract and display ecc plots'''
 
     pcd,voxel = voxelization(file, voxel_size)
@@ -123,7 +150,8 @@ def run(file, p, v, voxel_size, save, output, plant_name, visualize_ecc):
         visualize(voxel)
     img3d = voxels_to_img3d(voxel)
     points = np.asarray(pcd.points)
-    euler_char_curves(points=points, img3d=img3d, save=save, output=output, plant_name=plant_name, visualize_ecc=visualize_ecc)
+    points = normalize_pc(points)
+    euler_char_curves(points=points, img3d=img3d, save=save, output=output, plant_name=plant_name, visualize_ecc=visualize_ecc, parallels=parallels, meridians=meridians)
 
 def error_handling_args(args):
     try:
@@ -144,16 +172,17 @@ def main():
     parser.add_argument("-vis", "--visualize_ecc", action="store_true", help="Visualize ECC curve. Default: False")
     parser.add_argument("-s", "--save", action="store_false", help="Store numpy of ECC data. Default: True")
     parser.add_argument("-vs", "--voxel-size", help=f"Set voxel size (default {def_vs:g})", default=def_vs, type=float)
-    parser.add_argument("-n", "--name", required=True, help="The name of the input plant.")
+    parser.add_argument("-n", "--name", required=True, help="Name of the input plant.")
     parser.add_argument("-o", "--output", default="euler_characteristic_curves", help="The name of the output directory.")
-
+    parser.add_argument("-par", "--parallels", default=5, help="number of parallels equispaced between the equator and the north pole.")
+    parser.add_argument("-mer", "--meridians", default=18, help="Number of equispaced meridians.")
     args = parser.parse_args()
 
     # error handling on argument values
     error_handling_args(args)
 
     # run with arguments/flags
-    run(file=args.filename, p=args.pcd, v=args.voxel, voxel_size=args.voxel_size, save=args.save, output=args.output, plant_name=args.name, visualize_ecc=args.visualize_ecc)
+    run(file=args.filename, p=args.pcd, v=args.voxel, voxel_size=args.voxel_size, save=args.save, output=args.output, plant_name=args.name, visualize_ecc=args.visualize_ecc, parallels=args.parallels, meridians=args.meridians)
 
     return
 
