@@ -60,9 +60,8 @@ ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
 # Install demeter
 RUN cd /opt \
     wget https://data.cyverse.org/dav-anon/iplant/projects/phytooracle/software_installation/demeter.tar \
-    tar -xvf demeter.tar
-
-RUN cd /opt/demeter \
+    tar -xvf demeter.tar \
+    cd demeter \
     pip3 install -e .
 
 ENTRYPOINT [ "/usr/local/bin/python3.10", "/opt/extract_ecc.py" ]
