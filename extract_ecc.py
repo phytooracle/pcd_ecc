@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from seaborn import distplot,displot,histplot
 import open3d as o3d
 import pandas as pd
-import demeter.directions as dirs
+#import demeter.directions as dirs
 from sklearn import preprocessing
 
 def visualize(obj):
